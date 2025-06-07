@@ -9,10 +9,12 @@ public class User {
     private int balance = 1000;
     private int saveValue; // значение ставки
 
-    public User() {
-        for (int i = 1; i <= 6; i++) {
+    // создание объекта User и создание по Cube object
+    public User(String name) {
+        for (int i = 1; i <= 5; i++) {
             myCubes.add(new CubeSide(i));
         }
+        this.name = name;
     }
 
     public List<CubeSide> getMyCubes() {

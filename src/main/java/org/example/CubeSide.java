@@ -8,7 +8,7 @@ public class CubeSide {
     final static RandomEngine engine = new RandomEngine();
 
     public CubeSide (int faceValue) {
-        if (faceValue < 1 || faceValue > 6) throw new IllegalArgumentException("От 1 до 6 значение");
+        if (faceValue < 1 || faceValue > 5) throw new IllegalArgumentException("От 1 до 5 значение");
         this.faceValue = faceValue;
     }
 
