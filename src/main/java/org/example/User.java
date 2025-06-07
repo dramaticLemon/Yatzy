@@ -5,17 +5,17 @@ import java.util.List;
 
 public class User {
     private String name;
-    private List<Cube> myCubes = new ArrayList<>();
+    private List<CubeSide> myCubes = new ArrayList<>();
     private int balance = 1000;
     private int saveValue; // значение ставки
 
     public User() {
         for (int i = 1; i <= 6; i++) {
-            myCubes.add(new Cube(i));
+            myCubes.add(new CubeSide(i));
         }
     }
 
-    public List<Cube> getMyCubes() {
+    public List<CubeSide> getMyCubes() {
         return this.myCubes;
     }
 

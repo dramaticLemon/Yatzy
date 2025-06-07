@@ -2,12 +2,12 @@ package org.example;
 
 import java.util.stream.IntStream;
 
-public class Cube {
+public class CubeSide {
     private int value;
     private final int faceValue;
     final static RandomEngine engine = new RandomEngine();
 
-    public Cube(int faceValue) {
+    public CubeSide (int faceValue) {
         if (faceValue < 1 || faceValue > 6) throw new IllegalArgumentException("От 1 до 6 значение");
         this.faceValue = faceValue;
     }
@@ -23,8 +23,8 @@ public class Cube {
 
 
     // один юзер выборочно кидает кубики
-    public static void rollCube(User user1, int[] val) {
-        for (Cube cube : user1.getMyCubes()) {
+    public static void rollCubes(User user, int[] val) {
+        for (CubeSide cube : user.getMyCubes()) {
             if (IntStream.of(val).anyMatch(v -> v == cube.getFaceValue())) {
                 cube.roll();
             }
@@ -32,14 +32,14 @@ public class Cube {
     }
 
     // один юзер кидает все кубики
-    public static void rollCube(User user) {
-        Cube.rollMultiple(user);
+    public static void rollCubes(User user) {
+        CubeSide.rollMultiple(user);
     }
 
     // два юзера кидают все кубики
-    public static void rollCube(User user1, User user2) {
-        Cube.rollMultiple(user1);
-        Cube.rollMultiple(user2);
+    public static void rollCubes(User first, User second) {
+        CubeSide.rollMultiple(first);
+        CubeSide.rollMultiple(second);
     }
 
     // поменять значение у конкретного кубика
@@ -49,12 +49,12 @@ public class Cube {
 
     // кинуть все кубики у конкретного пользователя
     private static void rollMultiple(User user) {
-        user.getMyCubes().forEach(Cube::roll);
+        user.getMyCubes().forEach(CubeSide::roll);
     }
 
     @Override
     public String toString () {
-        return "Cube{" +
+        return "CubeSide{" +
                 "value=" + value +
                 '}';
     }

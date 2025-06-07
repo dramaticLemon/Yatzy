@@ -3,11 +3,11 @@ package org.example;
 public class Main {
     public static void main (String[] args) {
         User user = new User();
-        Cube.rollCube(user);
+        CubeSide.rollCubes(user);
         user.printCubeInfo();
         System.out.println();
         int[] val = {5,6};
-        Cube.rollCube(user, val);
+        CubeSide.rollCubes(user, val);
         user.printCubeInfo();
     }
 }
