@@ -12,17 +12,23 @@ public class CubeSide {
         this.faceValue = faceValue;
     }
 
+    /**
+     * get oder Cube
+     * @return int value order Cube
+     */
     public int getFaceValue() {
         return this.faceValue;
     }
 
-    // получить значение кубика
     public int getValue () {
         return value;
     }
 
-
-    // один юзер выборочно кидает кубики
+    /**
+     *
+     * @param user the specified user throwing who carries out the operation
+     * @param selectedSides selected dice to re roll
+     */
     public static void rollCubes(User user, Set<RerollSide> selectedSides) {
         for (CubeSide cube : user.getMyCubes()) {
             int faveValue = cube.getFaceValue();
@@ -35,24 +41,28 @@ public class CubeSide {
         }
     }
 
-    // один юзер кидает все кубики
-    public static void rollCubes(User user) {
-        CubeSide.rollMultiple(user);
+    /**
+     *
+     * @param firstUser user
+     * @param secondUser user
+     */
+    public static void rollCubes(User firstUser, User secondUser) {
+        CubeSide.rollingCubeHand(firstUser);
+        CubeSide.rollingCubeHand(secondUser);
     }
 
-    // два юзера кидают все кубики
-    public static void rollCubes(User first, User second) {
-        CubeSide.rollMultiple(first);
-        CubeSide.rollMultiple(second);
-    }
-
-    // поменять значение у конкретного кубика
+    /**
+     * assign a new value to a cube
+     */
     private void roll () {
         this.value = engine.generateDiceRoll();
     }
 
-    // кинуть все кубики у конкретного пользователя
-    private static void rollMultiple(User user) {
+    /**
+     *
+     * @param user the user who is conducting the operation
+     */
+    private static void rollingCubeHand (User user) {
         user.getMyCubes().forEach(CubeSide::roll);
     }
 

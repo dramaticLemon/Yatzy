@@ -2,62 +2,92 @@ package org.example;
 
 import java.util.*;
 
+import static org.example.Main.scanner;
+
 public class Game {
-    RandomEngine engine = new RandomEngine();
-    Scanner scanner = new Scanner(System.in);
 
     public UserChecker start(User firstUser, User secondUser) {
-        // начало раунда игроки бросают свои кубики
         CubeSide.rollCubes(firstUser, secondUser);
 
-        firstUser.printCubeInfo();
+        CombinationResult user1Result = printingCurrentHand(firstUser);
+        CombinationResult user2Result = printingCurrentHand(secondUser);
 
-        Map<Integer, Integer> arr = getSideFrequency(firstUser.getMyCubes());
-        CombinationResult u1 = getResult(arr);
-        System.out.println("Combination is: " + u1.getType() + "/" + u1.getKeyValues());
-
-        secondUser.printCubeInfo();
-
-        Map<Integer, Integer> arr2 = getSideFrequency(secondUser.getMyCubes());
-        CombinationResult u2 = getResult(arr2);
-        System.out.println("Combination is: " + u2.getType() + "/" + u2.getKeyValues());
-
-
-        // сделать ставку для первого игрока, автоматом такая ставка и для второго игрока
         System.out.println();
-        BetSize userBet = selectBet(scanner);
+        BetSize userBet = selectBet();
 
-        // возможность перебросить кубики один раз
-        firstUser.printCubeInfo();
-        System.out.println("Combination is: " + u1.getType() + "/" + u1.getKeyValues());
-        reRoll(firstUser, scanner);
-
-        secondUser.printCubeInfo();
-        System.out.println("Combination is: " + u2.getType() + "/" + u2.getKeyValues());
-        reRoll(secondUser, scanner);
+        chanceToReRoll(firstUser, user1Result);
+        chanceToReRoll(secondUser, user2Result);
 
         return playRound(firstUser, secondUser, userBet);
 
     }
 
-    private static void reRoll(User user, Scanner scanner) {
-        System.out.println("Хотите перекинуть кубики ?(да/нет)");
+    private CombinationResult printingCurrentHand(User user) {
+        user.printCubeInfo();
+        Map<Integer, Integer> arr = getSideFrequency(user.getMyCubes());
+        CombinationResult combResult = getResult(arr);
+        System.out.println("Combination is: " + combResult.getType() + "/" + combResult.getKeyValues());
+        return combResult;
+    }
+
+    /**
+     * Offer the player to choose the bet size.
+     * Requests user input and checks it against available bet sizes.
+     *
+     * @return player choose BetSize object
+     */
+    private static BetSize selectBet() {
+        BetSize selectedBetSize = null;
+        System.out.println("Choose bet size: ");
+        for (BetSize size : BetSize.values()) {
+            System.out.println("- " + size.name() + " (" + size.getAmount() + " Orens)");
+        }
+        System.out.println("Choose bet sum (ex. 10, 50, 100):");
+
+        while (true) {
+            try {
+                int userAmount = scanner.nextInt();
+                scanner.nextLine();
+                selectedBetSize = BetSize.fromAmount(userAmount);
+
+                if (selectedBetSize == null) {
+                    System.out.println("Uncorrected bet sum. Please, enter 10, 50 or 100.");
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Uncorrected input.Please  enter a number.");
+                scanner.next();
+                scanner.nextLine();
+            }
+
+            System.out.println("You choose bet: " + selectedBetSize.name() + " (" + selectedBetSize.getAmount() + " Orens)");
+            return selectedBetSize;
+        }
+    }
+
+    private static void chanceToReRoll(User user, CombinationResult cResult) {
+        user.printCubeInfo();
+        System.out.println("Combination is: " + cResult.getType() + "/" + cResult.getKeyValues());
+        reRoll(user);
+    }
+
+    private static void reRoll(User user) {
+        System.out.println("Do you want to roll the dice? (yes/no)");
         String userAnswer;
         while (true) {
             userAnswer = scanner.nextLine().trim().toLowerCase();
-            if (userAnswer.equals("нет") || userAnswer.equals("n")) {
-                System.out.println(user.getName() + " решил не перебрасывать кубики");
+            if (userAnswer.equals("no") || userAnswer.equals("n")) {
+                System.out.println(user.getName() + " want not re roll!");
                 return;
-            } else if (userAnswer.equals("да") || (userAnswer.equals("d"))) {
-                System.out.println(user.getName() + " решил перебросить кубики");
+            } else if (userAnswer.equals("yes") || (userAnswer.equals("y"))) {
+                System.out.println(user.getName() + " want re roll");
 
                 Set<RerollSide> selectedSides = new HashSet<>();
-                System.out.println("Вводи номера сторон (от 1 до 5). Чтобы закончить — введи 'end'");
+                System.out.println("Enter side number (1 - 5). To finish, enter 'end' ");
                 while (true) {
                     String token = scanner.next();
 
                     if (token.equalsIgnoreCase("end")) {
-                        System.out.println("Завершаем ввод");
+                        System.out.println("Input finish");
                         break;
                     }
                     try {
@@ -67,68 +97,34 @@ public class Game {
                         if (side != null) {
                             selectedSides.add(side);
                         } else {
-                            System.out.println("Предупреждение: '" + number + "' - некорректный номер кубика (должен быть от 1 до 5). Пропускаем.");
+                            System.out.println("Error: '" + number + "' - uncorrected CUBE number (must be 1 - 5). Skip.");
 
                         }
                     } catch (InputMismatchException e) {
                         String invalidToken = scanner.next();
-                        System.out.println("Предупреждение: '" + invalidToken + "' - некорректный ввод (ожидается число). Пропускаем.");
+                        System.out.println("Warning: '" + invalidToken + "' - uncorrected input (expect number). Skip.");
 
                     }
                 }
-                    // логика перебрасывания
                     CubeSide.rollCubes(user, selectedSides);
                     user.printCubeInfo();
                     return;
                 } else {
-                    System.out.println("Некоректный ввод. Пожалуйста введите 'да' или 'нет'.");
+                    System.out.println("Uncorrected input. Please enter 'yes | no'.");
                 }
             }
         }
 
-    /**
-     * Позволяет игроку выбрать размер ставки.
-     * Запрашивает ввод пользователя и проверяет его на соответствие доступным размерам ставок.
-     *
-     * @return Выбранный игроком объект BetSize
-     */
-    private static BetSize selectBet(Scanner scanner) {
-        BetSize selectedBetSize = null;
-        System.out.println("Выберите размер ставки: ");
-        for (BetSize size : BetSize.values()) {
-            System.out.println("- " + size.name() + " (" + size.getAmount() + " оренов)");
-        }
-        System.out.println("Введите сумму ставки (например, 10, 50, 100):");
 
-        while (true) {
-            try {
-                int userAmount = scanner.nextInt();
-                scanner.nextLine();
-                selectedBetSize = BetSize.fromAmount(userAmount);
-
-                if (selectedBetSize == null) {
-                    System.out.println("Некорректная сумма ставки. Пожалуйста, введите 10, 50 или 100.");
-                }
-            } catch (InputMismatchException e) {
-                System.out.println("Некорректный ввод. Пожалуйста, введите число.");
-                scanner.next();
-                scanner.nextLine();
-            }
-
-            System.out.println("Вы выбрали ставку: " + selectedBetSize.name() + " (" + selectedBetSize.getAmount() + " оренов)");
-            return selectedBetSize;
-        }
-    }
 
     public UserChecker playRound(User player1, User player2, BetSize betSize) {
 
         int bet = betSize.getAmount();
         if (player1.getBalance() < bet || player2.getBalance() < bet) {
-            System.out.println("У одного из игроков недостаточно денег для ставки.");
+            System.out.println("One of the players does not have enough money to place a bet.");
             return UserChecker.IS_BANKRUPT;
         }
 
-        // получить частотность встречи сторон кубика
         Map<Integer, Integer> finalSideArrUser1 = getSideFrequency(player1.getMyCubes());
         Map<Integer, Integer> finalSideArrUser2 = getSideFrequency(player2.getMyCubes());
 
@@ -148,21 +144,21 @@ public class Game {
 
         switch (result) {
             case WIN -> {
-                System.out.println(player1.getName() + " выиграл с комбинацией: " + resultUser1);
-                System.out.println(player2.getName() + " проиграл с комбинацией: " + resultUser2);
+                System.out.println(player1.getName() + " wined with combination: " + resultUser1);
+                System.out.println(player2.getName() + " loose with combination:: " + resultUser2);
                 player1.changeBalance(bet);
                 player2.changeBalance(-bet);
                 return UserChecker.USER1;
             }
             case LOSE -> {
-                System.out.println(player2.getName() + " выиграл с комбинацией: " + resultUser2);
-                System.out.println(player1.getName() + " проиграл с комбинацией: " + resultUser1);
+                System.out.println(player2.getName() +" wined with combination: " + resultUser2);
+                System.out.println(player1.getName() + " loose with combination: " + resultUser1);
                 player1.changeBalance(-bet);
                 player2.changeBalance(bet);
                 return UserChecker.USER2;
             }
             case DRAW -> {
-                System.out.println("Ничья! У обоих: " + resultUser1);
+                System.out.println("Draw !" + resultUser1);
                 return UserChecker.DRAW;
             }
         }
@@ -170,10 +166,14 @@ public class Game {
         return UserChecker.ERROR;
     }
 
-    private void printBalances(User p1, User p2) {
-        System.out.println(p1.getName() + " баланс: " + p1.getBalance());
-        System.out.println(p2.getName() + " баланс: " + p2.getBalance());
-        System.out.println("-----------------------");
+    public static Map<Integer, Integer> getSideFrequency(List<CubeSide> arrCubes) {
+        Map<Integer, Integer> frequencyMap = new HashMap<>();
+
+        for (CubeSide sideCubeValue: arrCubes) {
+            int cubeSideIntValue = sideCubeValue.getValue();
+            frequencyMap.put(cubeSideIntValue, frequencyMap.getOrDefault(cubeSideIntValue, 0) + 1);
+        }
+        return frequencyMap;
     }
 
     public static CombinationResult getResult(Map<Integer, Integer> frequencyMap) {
@@ -189,8 +189,8 @@ public class Game {
         }
 
         if (isFullHouse(frequencyMap).isPresent()) {
-            FullHouseInfo obj = isFullHouse(frequencyMap).get();
-            return new CombinationResult(ComboType.FULL_HOUSE, List.of(obj.getTripleValue(), obj.getPairValue()));
+            Map<String, Integer> mapValues = isFullHouse(frequencyMap).get();
+            return new CombinationResult(ComboType.FULL_HOUSE, List.of(mapValues.get("triple"), mapValues.get("pair")));
         }
 
         if (isBigStraight(frequencyMap).isPresent()) {
@@ -207,8 +207,8 @@ public class Game {
         }
 
         if (isTwoPair(frequencyMap).isPresent()) {
-            TwoPairInfo obj = isTwoPair(frequencyMap).get();
-            return new CombinationResult(ComboType.TWO_PAIR, List.of(obj.getHigherPairValue(), obj.getLowerPairValue(), obj.getKickerValue()));
+            Map<String, Integer> mapVal = isTwoPair(frequencyMap).get();
+            return new CombinationResult(ComboType.TWO_PAIR, List.of(mapVal.get("higherPairValue"), mapVal.get("lowerPairValue"), mapVal.get("kicker")));
         }
 
         if (isPair(frequencyMap).isPresent()) {
@@ -217,16 +217,6 @@ public class Game {
         }
 
         return new CombinationResult(ComboType.NOTHING, List.of(0));
-    }
-
-    public static Map<Integer, Integer> getSideFrequency(List<CubeSide> arrCubes) {
-        Map<Integer, Integer> frequencyMap = new HashMap<>();
-
-        for (CubeSide sideCubeValue: arrCubes) {
-            int cubeSideIntValue = sideCubeValue.getValue();
-            frequencyMap.put(cubeSideIntValue, frequencyMap.getOrDefault(cubeSideIntValue, 0) + 1);
-        }
-        return frequencyMap;
     }
 
     private static Optional<Integer> isPokerCombination(Map<Integer, Integer> map) {
@@ -249,7 +239,7 @@ public class Game {
         return Optional.empty();
     }
 
-    private static Optional<FullHouseInfo> isFullHouse(Map<Integer, Integer> map) {
+    private static Optional<Map<String, Integer>> isFullHouse(Map<Integer, Integer> map) {
         int tripleValue = -1;
         int pairValue = -1;
 
@@ -262,7 +252,7 @@ public class Game {
         }
 
         if (tripleValue != -1 && pairValue != -1) {
-            return Optional.of(new FullHouseInfo(tripleValue, pairValue));
+            return Optional.of(Map.of("triple", tripleValue, "pair", pairValue));
         }
 
         return Optional.empty();
@@ -286,6 +276,7 @@ public class Game {
 
         return Optional.empty();
     }
+
     private static Optional<Boolean> isSmallStraight(Map<Integer, Integer> map) {
         if (map.size() != 5) {
             return Optional.empty();
@@ -315,7 +306,7 @@ public class Game {
         return Optional.empty();
     }
 
-    private static Optional<TwoPairInfo> isTwoPair(Map<Integer, Integer> map) {
+    private static Optional<Map<String, Integer>> isTwoPair(Map<Integer, Integer> map) {
         List<Integer> pairs = new ArrayList<>();
         int kicker = -1;
 
@@ -329,7 +320,7 @@ public class Game {
 
         if (pairs.size() == 2 && kicker != -1) {
             pairs.sort(Collections.reverseOrder());
-            return Optional.of(new TwoPairInfo(pairs.get(0), pairs.get(1), kicker));
+            return Optional.of(Map.of("higherPairValue", pairs.get(0), "lowerPairValue", pairs.get(1), "kicker", kicker));
         }
         return Optional.empty();
     }
@@ -343,5 +334,11 @@ public class Game {
         return Optional.empty();
     }
 
- }
+    private void printBalances(User p1, User p2) {
+        System.out.println(p1.getName() + " balance: " + p1.getBalance());
+        System.out.println(p2.getName() + " balance: " + p2.getBalance());
+        System.out.println("-----------------------");
+    }
+
+}
 
