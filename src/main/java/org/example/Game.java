@@ -6,31 +6,37 @@ public class Game {
     RandomEngine engine = new RandomEngine();
     Scanner scanner = new Scanner(System.in);
 
-    public void start(User firstUser, User secondUser) {
-        // начало раунда игрок1 и игрок2 бросают свои кубики
+    public UserChecker start(User firstUser, User secondUser) {
+        // начало раунда игроки бросают свои кубики
         CubeSide.rollCubes(firstUser, secondUser);
 
-        System.out.println("First user");
         firstUser.printCubeInfo();
 
         Map<Integer, Integer> arr = getSideFrequency(firstUser.getMyCubes());
-        getResult(arr);
+        CombinationResult u1 = getResult(arr);
+        System.out.println("Combination is: " + u1.getType() + "/" + u1.getKeyValues());
 
-        System.out.println("Second user");
         secondUser.printCubeInfo();
 
         Map<Integer, Integer> arr2 = getSideFrequency(secondUser.getMyCubes());
-        getResult(arr2);
+        CombinationResult u2 = getResult(arr2);
+        System.out.println("Combination is: " + u2.getType() + "/" + u2.getKeyValues());
+
 
         // сделать ставку для первого игрока, автоматом такая ставка и для второго игрока
+        System.out.println();
         BetSize userBet = selectBet(scanner);
 
         // возможность перебросить кубики один раз
         firstUser.printCubeInfo();
+        System.out.println("Combination is: " + u1.getType() + "/" + u1.getKeyValues());
         reRoll(firstUser, scanner);
 
+        secondUser.printCubeInfo();
+        System.out.println("Combination is: " + u2.getType() + "/" + u2.getKeyValues());
+        reRoll(secondUser, scanner);
 
-        playRound(firstUser, secondUser, userBet);
+        return playRound(firstUser, secondUser, userBet);
 
     }
 
@@ -114,47 +120,55 @@ public class Game {
         }
     }
 
-    public void playRound(User player1, User player2, BetSize betSize) {
+    public UserChecker playRound(User player1, User player2, BetSize betSize) {
 
         int bet = betSize.getAmount();
-
         if (player1.getBalance() < bet || player2.getBalance() < bet) {
             System.out.println("У одного из игроков недостаточно денег для ставки.");
-            return;
+            return UserChecker.IS_BANKRUPT;
         }
 
+        // получить частотность встречи сторон кубика
+        Map<Integer, Integer> finalSideArrUser1 = getSideFrequency(player1.getMyCubes());
+        Map<Integer, Integer> finalSideArrUser2 = getSideFrequency(player2.getMyCubes());
 
-        GameResult result = getRandomResult(); // закинуть исход поединка
+        CombinationResult resultUser1 = getResult(finalSideArrUser1);
+        CombinationResult resultUser2 = getResult(finalSideArrUser2);
+
+        int cmp = resultUser1.compareTo(resultUser2);
+        GameResult result;
+
+        if (cmp > 0) {
+            result = GameResult.WIN;
+        } else if (cmp < 0) {
+            result = GameResult.LOSE;
+        } else {
+            result = GameResult.DRAW;
+        }
 
         switch (result) {
             case WIN -> {
-                System.out.println(player1.getName() + " выиграл!");
+                System.out.println(player1.getName() + " выиграл с комбинацией: " + resultUser1);
+                System.out.println(player2.getName() + " проиграл с комбинацией: " + resultUser2);
                 player1.changeBalance(bet);
                 player2.changeBalance(-bet);
+                return UserChecker.USER1;
             }
             case LOSE -> {
-                System.out.println(player2.getName() + " выиграл!");
+                System.out.println(player2.getName() + " выиграл с комбинацией: " + resultUser2);
+                System.out.println(player1.getName() + " проиграл с комбинацией: " + resultUser1);
                 player1.changeBalance(-bet);
                 player2.changeBalance(bet);
+                return UserChecker.USER2;
             }
             case DRAW -> {
-                System.out.println("Ничья!");
-                // балансы не меняются
+                System.out.println("Ничья! У обоих: " + resultUser1);
+                return UserChecker.DRAW;
             }
         }
-
         printBalances(player1, player2);
+        return UserChecker.ERROR;
     }
-
-    private GameResult getRandomResult() {
-        int rand = (int) (Math.random() * 3);
-        return switch (rand) {
-            case 0 -> GameResult.WIN;
-            case 1 -> GameResult.LOSE;
-            default -> GameResult.DRAW;
-        };
-    }
-
 
     private void printBalances(User p1, User p2) {
         System.out.println(p1.getName() + " баланс: " + p1.getBalance());
@@ -162,58 +176,47 @@ public class Game {
         System.out.println("-----------------------");
     }
 
-    public static void getResult(Map<Integer, Integer> frequencyMap) {
+    public static CombinationResult getResult(Map<Integer, Integer> frequencyMap) {
 
         if (isPokerCombination(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Poker combination");
-            return;
+            int value = isPokerCombination(frequencyMap).get();
+            return new CombinationResult(ComboType.POKER, List.of(value));
         }
 
         if (isCareCombination(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Care combination");
-            return;
+            int value = isPokerCombination(frequencyMap).get();
+            return new CombinationResult(ComboType.CARE, List.of(value));
         }
 
         if (isFullHouse(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Full House");
-            return;
+            FullHouseInfo obj = isFullHouse(frequencyMap).get();
+            return new CombinationResult(ComboType.FULL_HOUSE, List.of(obj.getTripleValue(), obj.getPairValue()));
         }
 
         if (isBigStraight(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Big Straight combination");
-            return;
+            return new CombinationResult(ComboType.BIG_STRAIGHT, List.of(0));
         }
 
         if (isSmallStraight(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Big Small Straight combination");
-            return;
+            return new CombinationResult(ComboType.SMALL_STRAIGHT, List.of(0));
         }
 
         if (isThreeOfAKind(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Three combination");
-            return;
-        }
-
-        if (isPair(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Pair combination");
-            return;
+            int value = isThreeOfAKind(frequencyMap).get();
+            return new CombinationResult(ComboType.THREE_OF_A_KIND, List.of(value));
         }
 
         if (isTwoPair(frequencyMap).isPresent()) {
-            // add logic
-            System.out.println("Two Pair combination");
-            return;
+            TwoPairInfo obj = isTwoPair(frequencyMap).get();
+            return new CombinationResult(ComboType.TWO_PAIR, List.of(obj.getHigherPairValue(), obj.getLowerPairValue(), obj.getKickerValue()));
         }
 
-        System.out.println("Nothing");
+        if (isPair(frequencyMap).isPresent()) {
+            int value = isPair(frequencyMap).get();
+            return new CombinationResult(ComboType.PAIR, List.of(value));
+        }
 
+        return new CombinationResult(ComboType.NOTHING, List.of(0));
     }
 
     public static Map<Integer, Integer> getSideFrequency(List<CubeSide> arrCubes) {
@@ -305,7 +308,7 @@ public class Game {
     private static Optional<Integer> isThreeOfAKind(Map<Integer, Integer> map) {
         for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
             if (entry.getValue() == 3) {
-                return Optional.of(entry.getValue());
+                return Optional.of(entry.getKey());
             }
         }
 
@@ -334,7 +337,7 @@ public class Game {
     private static Optional<Integer> isPair(Map<Integer, Integer> map) {
         for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
             if (entry.getValue() == 2) {
-                return Optional.of(entry.getValue());
+                return Optional.of(entry.getKey());
             }
         }
         return Optional.empty();

@@ -22,7 +22,10 @@ public class User {
     }
 
     public void printCubeInfo() {
+        System.out.println();
+        System.out.println("Текущая рука " + this.name);
         myCubes.forEach(System.out::println);
+        System.out.println("-------");
     }
 
     public void getMoneyValues () {

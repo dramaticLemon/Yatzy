@@ -1,7 +1,6 @@
 package org.example;
 
 import java.util.Set;
-import java.util.stream.IntStream;
 
 public class CubeSide {
     private int value;
@@ -59,8 +58,6 @@ public class CubeSide {
 
     @Override
     public String toString () {
-        return "CubeSide{" +
-                "value=" + value +
-                '}';
+        return RerollSide.fromNumber(faceValue) + "[" + this.value + "]";
     }
 }
