@@ -1,5 +1,6 @@
 package org.example;
 
+import java.util.Set;
 import java.util.stream.IntStream;
 
 public class CubeSide {
@@ -23,9 +24,13 @@ public class CubeSide {
 
 
     // один юзер выборочно кидает кубики
-    public static void rollCubes(User user, int[] val) {
+    public static void rollCubes(User user, Set<RerollSide> selectedSides) {
         for (CubeSide cube : user.getMyCubes()) {
-            if (IntStream.of(val).anyMatch(v -> v == cube.getFaceValue())) {
+            int faveValue = cube.getFaceValue();
+            boolean shouldRoll = selectedSides.stream()
+                    .anyMatch(side -> side.getNumber() == faveValue);
+
+            if (shouldRoll) {
                 cube.roll();
             }
         }

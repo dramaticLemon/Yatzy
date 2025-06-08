@@ -15,4 +15,13 @@ public enum BetSize {
         return amount;
     }
 
+    public static BetSize fromAmount(int amount) {
+        for (BetSize size : BetSize.values()) {
+            if (size.getAmount() == amount) {
+                return size;
+            }
+        }
+        return null;
+    }
+
 }
