@@ -1,10 +1,16 @@
 package org.example;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.example.Main.scanner;
 
 public class Game {
+
+    private static final Set<Integer> ALLOWED_BET_AMOUNTS = Arrays.stream(BetSize.values())
+            .map(BetSize::getAmount)
+            .collect(Collectors.toSet());
+
 
     public UserChecker start(User firstUser, User secondUser) {
         CubeSide.rollCubes(firstUser, secondUser);
@@ -42,15 +48,18 @@ public class Game {
         for (BetSize size : BetSize.values()) {
             System.out.println("- " + size.name() + " (" + size.getAmount() + " Orens)");
         }
-        System.out.println("Choose bet sum (ex. 10, 50, 100):");
 
-        while (true) {
+
+        while (selectedBetSize == null) {
+            System.out.println("Choose bet sum (ex. 10, 50, 100):");
+
             try {
                 int userAmount = scanner.nextInt();
                 scanner.nextLine();
-                selectedBetSize = BetSize.fromAmount(userAmount);
 
-                if (selectedBetSize == null) {
+                if (ALLOWED_BET_AMOUNTS.contains(userAmount)) {
+                    selectedBetSize = BetSize.fromAmount(userAmount);
+                } else {
                     System.out.println("Uncorrected bet sum. Please, enter 10, 50 or 100.");
                 }
             } catch (InputMismatchException e) {
@@ -58,10 +67,10 @@ public class Game {
                 scanner.next();
                 scanner.nextLine();
             }
-
-            System.out.println("You choose bet: " + selectedBetSize.name() + " (" + selectedBetSize.getAmount() + " Orens)");
-            return selectedBetSize;
         }
+        System.out.println("You choose bet: " + selectedBetSize.name() + " (" + selectedBetSize.getAmount() + " Orens)");
+
+        return selectedBetSize;
     }
 
     private static void chanceToReRoll(User user, CombinationResult cResult) {
